@@ -1,0 +1,15 @@
+fastapi>=0.110.0
+uvicorn[standard]>=0.27.0
+sqlalchemy[asyncio]>=2.0.0
+aiosqlite>=0.20.0          # SQLite async (dev)
+asyncpg>=0.29.0            # PostgreSQL async (prod)
+pydantic[email]>=2.0.0
+python-jose[cryptography]
+bcrypt>=4.0.0
+PyJWT>=2.8.0
+requests>=2.31.0
+pandas>=2.0.0
+numpy>=1.24.0
+stripe>=8.0.0              # Pagamentos internacionais
+mercadopago>=2.2.0         # Pagamentos Brasil
+python-dotenv>=1.0.0
