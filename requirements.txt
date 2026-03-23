@@ -13,3 +13,4 @@ numpy>=1.24.0
 stripe>=8.0.0              # Pagamentos internacionais
 mercadopago>=2.2.0         # Pagamentos Brasil
 python-dotenv>=1.0.0
+apscheduler>=3.10.0
