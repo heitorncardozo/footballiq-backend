@@ -13,7 +13,7 @@ from api.auth import get_current_user
 router = APIRouter()
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={GEMINI_API_KEY}"
+GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={GEMINI_API_KEY}"
 class TipRequest(BaseModel):
     home_team:      str
     away_team:      str
