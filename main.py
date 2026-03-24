@@ -39,6 +39,7 @@ app.add_middleware(
 app.include_router(auth_router,     prefix="/auth",     tags=["Auth"])
 app.include_router(matches_router,  prefix="/matches",  tags=["Partidas"])
 app.include_router(analysis_router, prefix="/analysis", tags=["Análise"])
+app.include_router(payments_router, prefix="/payments", tags=["Pagamentos"])
 app.include_router(ai_tips_router,  prefix="/ai",       tags=["IA"])
 
 
