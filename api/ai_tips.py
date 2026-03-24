@@ -54,25 +54,33 @@ Gere o palpite:"""
     try:
         async with httpx.AsyncClient(timeout=30) as client:
             r = await client.post(
-                ANTHROPIC_URL,
+                ANTHROPIC_URL, # <-- Não esqueça dessa variável aqui!
                 headers={
                     "x-api-key":         ANTHROPIC_API_KEY,
                     "anthropic-version": "2023-06-01",
                     "content-type":      "application/json",
                 },
                 json={
-                    "model":      "claude-haiku-4-5-20251001",
+                    "model":      "claude-3-5-haiku-20241022", # <-- Modelo corrigido
                     "max_tokens": 300,
                     "messages":   [{"role": "user", "content": prompt}],
                 },
             )
+            
+            if r.status_code != 200:
+                print(f"ERRO DA ANTHROPIC: {r.text}") 
+                raise HTTPException(status_code=500, detail=f"Erro na API da Anthropic: {r.text}")
+
             data = r.json()
             tip  = data.get("content", [{}])[0].get("text", "")
+            
             if not tip:
-                raise HTTPException(status_code=500, detail="IA não retornou resposta.")
+                raise HTTPException(status_code=500, detail="IA não retornou resposta válida.")
+            
             return {"tip": tip}
 
     except httpx.TimeoutException:
         raise HTTPException(status_code=504, detail="Timeout na IA. Tente novamente.")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro na IA: {str(e)}")
+        print(f"ERRO INTERNO NO PYTHON: {str(e)}") 
+        raise HTTPException(status_code=500, detail=f"Erro interno: {str(e)}")
