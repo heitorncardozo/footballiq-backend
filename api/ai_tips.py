@@ -1,8 +1,4 @@
-"""
-FootballIQ — AI Tips API
-========================
-Endpoint que gera palpites usando Claude (Anthropic).
-"""
+
 
 import os
 import httpx
@@ -12,8 +8,10 @@ from api.auth import get_current_user
 
 router = APIRouter()
 
+# O Railway vai ler a variável que você acabou de configurar
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "").strip()
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
+
 class TipRequest(BaseModel):
     home_team:      str
     away_team:      str
@@ -29,10 +27,9 @@ class TipRequest(BaseModel):
 
 @router.post("/tip")
 async def generate_tip(body: TipRequest, user=Depends(get_current_user)):
-    """Gera palpite com IA para um jogo."""
-    # MUDE A VERIFICAÇÃO PARA A NOVA CHAVE:
+    # Se der erro aqui, saberemos que é a comunicação com a Groq
     if not GROQ_API_KEY:
-        raise HTTPException(status_code=500, detail="Chave do Groq não configurada.")
+        raise HTTPException(status_code=500, detail="A chave GROQ_API_KEY não foi encontrada no ambiente do Railway.")
 
     vbs_text = ", ".join(
         f"{vb.get('mercado')} (odd {vb.get('odd')}, EV +{vb.get('ev')})"
