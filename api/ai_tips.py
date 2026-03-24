@@ -12,8 +12,8 @@ from api.auth import get_current_user
 
 router = APIRouter()
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={GEMINI_API_KEY}"
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
+GEMINI_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent"
 class TipRequest(BaseModel):
     home_team:      str
     away_team:      str
@@ -56,6 +56,7 @@ Gere o palpite:"""
                 GEMINI_URL,
                 headers={
                     "content-type": "application/json",
+                    "x-goog-api-key": GEMINI_API_KEY, # <-- CHAVE ENVIADA DE FORMA SEGURA AQUI
                 },
                 json={
                     "contents": [{"parts": [{"text": prompt}]}]
