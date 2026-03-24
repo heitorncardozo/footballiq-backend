@@ -12,9 +12,8 @@ from api.auth import get_current_user
 
 router = APIRouter()
 
-ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
-ANTHROPIC_URL     = "https://api.anthropic.com/v1/messages"
-
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
 
 class TipRequest(BaseModel):
     home_team:      str
@@ -32,8 +31,9 @@ class TipRequest(BaseModel):
 @router.post("/tip")
 async def generate_tip(body: TipRequest, user=Depends(get_current_user)):
     """Gera palpite com IA para um jogo."""
-    if not ANTHROPIC_API_KEY:
-        raise HTTPException(status_code=500, detail="Chave da IA não configurada.")
+    # MUDE A VERIFICAÇÃO PARA A NOVA CHAVE:
+    if not GEMINI_API_KEY:
+        raise HTTPException(status_code=500, detail="Chave do Gemini não configurada.")
 
     vbs_text = ", ".join(
         f"{vb.get('mercado')} (odd {vb.get('odd')}, EV +{vb.get('ev')})"
@@ -54,25 +54,26 @@ Gere o palpite:"""
     try:
         async with httpx.AsyncClient(timeout=30) as client:
             r = await client.post(
-                ANTHROPIC_URL, # <-- Não esqueça dessa variável aqui!
+                GEMINI_URL,
                 headers={
-                    "x-api-key":         ANTHROPIC_API_KEY,
-                    "anthropic-version": "2023-06-01",
-                    "content-type":      "application/json",
+                    "content-type": "application/json",
                 },
                 json={
-                    "model":      "claude-3-5-haiku-20241022", # <-- Modelo corrigido
-                    "max_tokens": 300,
-                    "messages":   [{"role": "user", "content": prompt}],
+                    "contents": [{"parts": [{"text": prompt}]}]
                 },
             )
             
             if r.status_code != 200:
-                print(f"ERRO DA ANTHROPIC: {r.text}") 
-                raise HTTPException(status_code=500, detail=f"Erro na API da Anthropic: {r.text}")
+                print(f"ERRO DO GEMINI: {r.text}") 
+                raise HTTPException(status_code=500, detail=f"Erro na API do Gemini: {r.text}")
 
             data = r.json()
-            tip  = data.get("content", [{}])[0].get("text", "")
+            
+            # Navegar no JSON do Gemini para encontrar o texto da resposta
+            try:
+                tip = data["candidates"][0]["content"]["parts"][0]["text"]
+            except (KeyError, IndexError):
+                tip = ""
             
             if not tip:
                 raise HTTPException(status_code=500, detail="IA não retornou resposta válida.")
