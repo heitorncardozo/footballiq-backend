@@ -146,3 +146,9 @@ def _format_analysis(analysis: Analysis, match: Match) -> dict:
         "odds_source": analysis.odds_source,
         "created_at":  analysis.created_at.isoformat(),
     }
+@router.post("/populate")
+async def populate_db(db: AsyncSession = Depends(get_db)):
+    """Popula o banco com jogos reais de todas as ligas."""
+    import subprocess, sys
+    subprocess.Popen([sys.executable, "populate_all_leagues.py"])
+    return {"status": "Populando banco em background..."}
