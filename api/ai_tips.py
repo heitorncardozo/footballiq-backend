@@ -12,8 +12,8 @@ from api.auth import get_current_user
 
 router = APIRouter()
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
-GEMINI_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent"
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "").strip()
+GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 class TipRequest(BaseModel):
     home_team:      str
     away_team:      str
@@ -31,8 +31,8 @@ class TipRequest(BaseModel):
 async def generate_tip(body: TipRequest, user=Depends(get_current_user)):
     """Gera palpite com IA para um jogo."""
     # MUDE A VERIFICAÇÃO PARA A NOVA CHAVE:
-    if not GEMINI_API_KEY:
-        raise HTTPException(status_code=500, detail="Chave do Gemini não configurada.")
+    if not GROQ_API_KEY:
+        raise HTTPException(status_code=500, detail="Chave do Groq não configurada.")
 
     vbs_text = ", ".join(
         f"{vb.get('mercado')} (odd {vb.get('odd')}, EV +{vb.get('ev')})"
@@ -53,25 +53,26 @@ Gere o palpite:"""
     try:
         async with httpx.AsyncClient(timeout=30) as client:
             r = await client.post(
-                GEMINI_URL,
+                GROQ_URL,
                 headers={
-                    "content-type": "application/json",
-                    "x-goog-api-key": GEMINI_API_KEY, # <-- CHAVE ENVIADA DE FORMA SEGURA AQUI
+                    "Authorization": f"Bearer {GROQ_API_KEY}",
+                    "Content-Type": "application/json",
                 },
                 json={
-                    "contents": [{"parts": [{"text": prompt}]}]
+                    "model": "llama3-8b-8192", # Modelo super rápido e gratuito
+                    "messages": [{"role": "user", "content": prompt}],
+                    "temperature": 0.7
                 },
             )
             
             if r.status_code != 200:
-                print(f"ERRO DO GEMINI: {r.text}") 
-                raise HTTPException(status_code=500, detail=f"Erro na API do Gemini: {r.text}")
+                print(f"ERRO DA GROQ: {r.text}") 
+                raise HTTPException(status_code=500, detail =f"Erro na API da Groq: {r.text}")
 
             data = r.json()
-            
-            # Navegar no JSON do Gemini para encontrar o texto da resposta
+
             try:
-                tip = data["candidates"][0]["content"]["parts"][0]["text"]
+                tip = data["choices"][0]["message"]["content"]
             except (KeyError, IndexError):
                 tip = ""
             
@@ -85,3 +86,4 @@ Gere o palpite:"""
     except Exception as e:
         print(f"ERRO INTERNO NO PYTHON: {str(e)}") 
         raise HTTPException(status_code=500, detail=f"Erro interno: {str(e)}")
+    
