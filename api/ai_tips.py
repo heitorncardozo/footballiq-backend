@@ -1,4 +1,8 @@
-
+"""
+FootballIQ — AI Tips API
+========================
+Endpoint que gera palpites usando Claude (Anthropic).
+"""
 
 import os
 import httpx
@@ -8,9 +12,9 @@ from api.auth import get_current_user
 
 router = APIRouter()
 
-# O Railway vai ler a variável que você acabou de configurar
-GROQ_API_KEY = os.getenv("GROQ_API_KEY", "").strip()
-GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
+ANTHROPIC_URL     = "https://api.anthropic.com/v1/messages"
+
 
 class TipRequest(BaseModel):
     home_team:      str
@@ -27,9 +31,9 @@ class TipRequest(BaseModel):
 
 @router.post("/tip")
 async def generate_tip(body: TipRequest, user=Depends(get_current_user)):
-    # Se der erro aqui, saberemos que é a comunicação com a Groq
-    if not GROQ_API_KEY:
-        raise HTTPException(status_code=500, detail="A chave GROQ_API_KEY não foi encontrada no ambiente do Railway.")
+    """Gera palpite com IA para um jogo."""
+    if not ANTHROPIC_API_KEY:
+        raise HTTPException(status_code=500, detail="Chave da IA não configurada.")
 
     vbs_text = ", ".join(
         f"{vb.get('mercado')} (odd {vb.get('odd')}, EV +{vb.get('ev')})"
@@ -50,37 +54,25 @@ Gere o palpite:"""
     try:
         async with httpx.AsyncClient(timeout=30) as client:
             r = await client.post(
-                GROQ_URL,
+                ANTHROPIC_URL,
                 headers={
-                    "Authorization": f"Bearer {GROQ_API_KEY}",
-                    "Content-Type": "application/json",
+                    "x-api-key":         ANTHROPIC_API_KEY,
+                    "anthropic-version": "2023-06-01",
+                    "content-type":      "application/json",
                 },
                 json={
-                    "model": "llama3-8b-8192", # Modelo super rápido e gratuito
-                    "messages": [{"role": "user", "content": prompt}],
-                    "temperature": 0.7
+                    "model":      "claude-haiku-4-5-20251001",
+                    "max_tokens": 300,
+                    "messages":   [{"role": "user", "content": prompt}],
                 },
             )
-            
-            if r.status_code != 200:
-                print(f"ERRO DA GROQ: {r.text}") 
-                raise HTTPException(status_code=500, detail =f"Erro na API da Groq: {r.text}")
-
             data = r.json()
-
-            try:
-                tip = data["choices"][0]["message"]["content"]
-            except (KeyError, IndexError):
-                tip = ""
-            
+            tip  = data.get("content", [{}])[0].get("text", "")
             if not tip:
-                raise HTTPException(status_code=500, detail="IA não retornou resposta válida.")
-            
+                raise HTTPException(status_code=500, detail="IA não retornou resposta.")
             return {"tip": tip}
 
     except httpx.TimeoutException:
         raise HTTPException(status_code=504, detail="Timeout na IA. Tente novamente.")
     except Exception as e:
-        print(f"ERRO INTERNO NO PYTHON: {str(e)}") 
-        raise HTTPException(status_code=500, detail=f"Erro interno: {str(e)}")
-    
+        raise HTTPException(status_code=500, detail=f"Erro na IA: {str(e)}")
