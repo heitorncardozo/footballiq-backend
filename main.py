@@ -15,6 +15,7 @@ from api.auth     import router as auth_router
 from api.matches  import router as matches_router
 from api.analysis import router as analysis_router
 from api.payments import router as payments_router
+from api.ai_tips  import router as ai_tips_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -38,7 +39,8 @@ app.add_middleware(
 app.include_router(auth_router,     prefix="/auth",     tags=["Auth"])
 app.include_router(matches_router,  prefix="/matches",  tags=["Partidas"])
 app.include_router(analysis_router, prefix="/analysis", tags=["Análise"])
-app.include_router(payments_router, prefix="/payments", tags=["Pagamentos"])
+app.include_router(ai_tips_router,  prefix="/ai",       tags=["IA"])
+
 
 @app.get("/")
 def root():
